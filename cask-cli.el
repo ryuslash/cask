@@ -234,6 +234,17 @@ installation."
     (princ "Outdated packages:\n")
     (-each outdated 'cask-cli--print-upgrade)))
 
+(defun cask-cli/new ()
+  "Print list of new packages.
+
+This should be run before any other operation, otherwise the
+packages will no longer be considered new."
+  (cask-cli--setup)
+  (-when-let (new (cask-new))
+    (princ "New packages:\n")
+    (-each new (lambda (itm) (princ (format "%s from archive %s\n"
+                                       (car itm) (cdr itm)))))))
+
 
 ;;;; Options
 
@@ -284,6 +295,7 @@ This function prints Cask's version on the format:
  (command "path" cask-cli/path)
  (command "package-directory" cask-cli/package-directory)
  (command "outdated" cask-cli/outdated)
+ (command "new" cask-cli/new)
 
  (option "--version" cask-cli/cask-version)
  (option "-h, --help" cask-cli/help)

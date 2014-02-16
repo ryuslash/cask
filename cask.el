@@ -343,6 +343,41 @@ to install, and ERR is the original error data."
   (epl-initialize)
   (epl-find-upgrades))
 
+(defun cask--package-archive (package)
+  "Get the archive name from PACKAGE."
+  ;; Before Emacs 24.4 packages were stored in a vector, of which the
+  ;; 6th element was the name of the archive it was found in.  In
+  ;; Emacs 24.4 the packages are stored in a struct with a proper
+  ;; accessor.
+  (if (fboundp #'package-desc-archive)
+      (package-desc-archive package)
+    (aref package 5)))
+
+(defun cask--normalize-package (package)
+  "Return the actual PACKAGE vector."
+  ;; Before Emacs 24.4 a cons cell was used for each element in
+  ;; `package-archive-contents', in Emacs 24.4 this has become a
+  ;; proper list.
+  (if (listp package)
+      (car package)
+    package))
+
+(defun cask-new ()
+  "Return list of new packages."
+  (epl-initialize)
+  (package-read-all-archive-contents)
+  (let ((old-archives package-archive-contents)
+        new-packages)
+    (epl-refresh)
+    (dolist (elt package-archive-contents)
+      (unless (assq (car elt) old-archives)
+        ;; Pre Emacs 24.4 uses an improper list for each element in
+        ;; `package-archive-contents', whereas 24.4 uses proper lists.
+        (let ((package (cask--normalize-package (cdr elt))))
+          (push (cons (car elt) (cask--package-archive package))
+                new-packages))))
+    new-packages))
+
 (provide 'cask)
 
 ;;; cask.el ends here
