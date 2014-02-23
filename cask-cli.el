@@ -106,6 +106,14 @@
     (epl-package-version-string (epl-upgrade-installed upgrade))
     (epl-package-version-string (epl-upgrade-available upgrade)))))
 
+(defun cask-cli--print-new (package)
+  (princ
+   (format
+    "%s on %s: %s\n"
+    (cask-package-name package)
+    (cask-package-archive package)
+    (cask-package-description package))))
+
 
 ;;;; Commands
 
@@ -242,8 +250,7 @@ packages will no longer be considered new."
   (cask-cli--setup)
   (-when-let (new (cask-new))
     (princ "New packages:\n")
-    (-each new (lambda (itm) (princ (format "%s from archive %s\n"
-                                       (car itm) (cdr itm)))))))
+    (-each new #'cask-cli--print-new)))
 
 
 ;;;; Options

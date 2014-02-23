@@ -85,7 +85,7 @@ Defaults to `error'."
 (define-error 'cask-missing-dependencies "Missing dependencies" 'cask-error)
 (define-error 'cask-failed-installation "Failed installation" 'cask-error)
 
-(defstruct cask-package name version description)
+(defstruct cask-package name version description archive)
 (defstruct cask-dependency name version)
 (defstruct cask-source name url)
 
@@ -353,6 +353,14 @@ to install, and ERR is the original error data."
       (package-desc-archive package)
     (aref package 5)))
 
+(defun cask--package-description (package)
+  "Get the package's description from PACKAGE."
+  ;; Emacs 24.4 has the `package-desc-summary' function, which used to
+  ;; be `package-desc-doc' in earlier versions.
+  (if (fboundp #'package-desc-summary)
+      (package-desc-summary package)
+    (package-desc-doc package)))
+
 (defun cask--normalize-package (package)
   "Return the actual PACKAGE vector."
   ;; Before Emacs 24.4 a cons cell was used for each element in
@@ -371,10 +379,12 @@ to install, and ERR is the original error data."
     (epl-refresh)
     (dolist (elt package-archive-contents)
       (unless (assq (car elt) old-archives)
-        ;; Pre Emacs 24.4 uses an improper list for each element in
-        ;; `package-archive-contents', whereas 24.4 uses proper lists.
         (let ((package (cask--normalize-package (cdr elt))))
-          (push (cons (car elt) (cask--package-archive package))
+          (push (make-cask-package
+                 :name (car elt)
+                 :version nil
+                 :description (cask--package-description package)
+                 :archive (cask--package-archive package))
                 new-packages))))
     new-packages))
 
